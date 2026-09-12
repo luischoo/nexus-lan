@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useEffect, useMemo, useRef, useState } from "react"
+import type { MutableRefObject } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import * as THREE from "three"
 
@@ -50,7 +51,9 @@ export function UniverseCanvas() {
   return <div className="universe-canvas" aria-hidden="true"><Canvas camera={{ position: [0, 0, 8], fov: 60 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><ambientLight intensity={0.3} /><AmbientStars /></Canvas></div>
 }
 
-const LogoParticles = memo(function LogoParticles({ dispersed }: { dispersed: boolean }) {
+type TouchController = { active: boolean; lastX: number; deltaX: number }
+
+const LogoParticles = memo(function LogoParticles({ dispersed, touchController }: { dispersed: boolean; touchController: MutableRefObject<TouchController> }) {
   const [isDragging, setIsDragging] = useState(false)
   const pointsRef = useRef<THREE.Points>(null)
   const groupRef = useRef<THREE.Group>(null)
@@ -58,6 +61,18 @@ const LogoParticles = memo(function LogoParticles({ dispersed }: { dispersed: bo
   const lastX = useRef(0)
   const progress = useRef(0)
   const targetRotation = useRef({ x: 0, y: 0 })
+  const { camera } = useThree()
+  useEffect(() => {
+    const updateCamera = () => {
+      const mobile = window.innerWidth < 768
+      camera.position.z = mobile ? 13 : 10
+      camera.fov = mobile ? 48 : 42
+      camera.updateProjectionMatrix()
+    }
+    updateCamera()
+    window.addEventListener("resize", updateCamera)
+    return () => window.removeEventListener("resize", updateCamera)
+  }, [camera])
   const cloud = useMemo(() => {
     const canvas = document.createElement("canvas")
     canvas.width = 720; canvas.height = 220
@@ -83,7 +98,11 @@ const LogoParticles = memo(function LogoParticles({ dispersed }: { dispersed: bo
       position.array[j + 2] = THREE.MathUtils.lerp(cloud.ambient[j + 2], cloud.positions[j + 2], progress.current)
     }
     position.needsUpdate = true
-    targetRotation.current.y = dragging.current ? targetRotation.current.y : pointer.x * 0.22
+    if (touchController.deltaX !== 0) {
+      targetRotation.current.y += touchController.deltaX * (window.innerWidth < 768 ? 0.018 : 0.01)
+      touchController.deltaX = 0
+    }
+    targetRotation.current.y = dragging.current || touchController.active ? targetRotation.current.y : pointer.x * 0.22
     targetRotation.current.x = pointer.y * 0.12
     groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotation.current.y, 0.08)
     groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotation.current.x, 0.08)
@@ -94,6 +113,7 @@ const LogoParticles = memo(function LogoParticles({ dispersed }: { dispersed: bo
 
 export function NexusParticleLogo() {
   const [dpr, setDpr] = useState(1)
+  const touchController = useRef<TouchController>({ active: false, lastX: 0, deltaX: 0 })
   const sectionRef = useRef<HTMLDivElement>(null)
   const [dispersed, setDispersed] = useState(false)
   useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, 2)) }, [])
@@ -102,5 +122,8 @@ export function NexusParticleLogo() {
     if (sectionRef.current) observer.observe(sectionRef.current)
     return () => observer.disconnect()
   }, [])
-  return <div ref={sectionRef} className="nexus-particle-stage"><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 10], fov: 42 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><LogoParticles dispersed={dispersed} /></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => { touchController.current.active = true; touchController.current.lastX = event.touches[0]?.clientX ?? 0 }
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => { if (!touchController.current.active) return; const x = event.touches[0]?.clientX ?? touchController.current.lastX; touchController.current.deltaX += x - touchController.current.lastX; touchController.current.lastX = x }
+  const handleTouchEnd = () => { touchController.current.active = false; touchController.current.deltaX = 0 }
+  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 10], fov: 42 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><LogoParticles dispersed={dispersed} touchController={touchController} /></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
 }
