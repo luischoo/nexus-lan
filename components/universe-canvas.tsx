@@ -51,6 +51,7 @@ export function UniverseCanvas() {
 }
 
 const LogoParticles = memo(function LogoParticles({ dispersed }: { dispersed: boolean }) {
+  const [isDragging, setIsDragging] = useState(false)
   const pointsRef = useRef<THREE.Points>(null)
   const groupRef = useRef<THREE.Group>(null)
   const dragging = useRef(false)
@@ -88,7 +89,7 @@ const LogoParticles = memo(function LogoParticles({ dispersed }: { dispersed: bo
     groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotation.current.x, 0.08)
   })
 
-  return <group ref={groupRef} onPointerDown={(event) => { dragging.current = true; lastX.current = event.clientX }} onPointerUp={() => { dragging.current = false }} onPointerLeave={() => { dragging.current = false }} onPointerMove={(event) => { if (dragging.current) { targetRotation.current.y += (event.clientX - lastX.current) * 0.01; lastX.current = event.clientX } }}><points ref={pointsRef}><bufferGeometry><bufferAttribute attach="attributes-position" args={[cloud.ambient.slice(), 3]} /></bufferGeometry><pointsMaterial color="#a7efff" size={0.045} transparent opacity={0.9} sizeAttenuation /></points><mesh><sphereGeometry args={[3.7, 16, 16]} /><meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.035} /></mesh></group>
+  return <group ref={groupRef} onPointerDown={(event) => { setIsDragging(true); dragging.current = true; lastX.current = event.clientX }} onPointerUp={() => { setIsDragging(false); dragging.current = false }} onPointerLeave={() => { setIsDragging(false); dragging.current = false }} onPointerMove={(event) => { if (isDragging && dragging.current) { targetRotation.current.y += (event.clientX - lastX.current) * 0.01; lastX.current = event.clientX } }}><points ref={pointsRef}><bufferGeometry><bufferAttribute attach="attributes-position" args={[cloud.ambient.slice(), 3]} /></bufferGeometry><pointsMaterial color="#a7efff" size={0.045} transparent opacity={0.9} sizeAttenuation /></points><mesh><sphereGeometry args={[3.7, 16, 16]} /><meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.035} /></mesh></group>
 })
 
 export function NexusParticleLogo() {
