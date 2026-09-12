@@ -1,47 +1,31 @@
-export default function Page() {
-  return (
-    <main
-      style={{
-        colorScheme: 'light dark',
-        position: 'relative',
-        display: 'flex',
-        minHeight: '100vh',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'light-dark(#fff, #000)',
-        color: 'light-dark(#000, #fff)',
-      }}
-    >
-      <svg
-        aria-hidden="true"
-        style={{ width: 80, height: 80 }}
-        width={80}
-        height={80}
-        fill="none"
-        viewBox="0 0 20 20"
-        xmlns="http://www.w3.org/2000/svg"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      >
-        <path
-          d="M14.2 14.2H17V6.9375C17 4.76288 15.2371 3 13.0625 3H5.8V5.8M14.2 14.2V7.79063L7.79062 14.2H14.2ZM14.2 14.2V17H6.9375C4.76288 17 3 15.2371 3 13.0625V5.8H5.8M5.8 5.8V12.2313L12.2313 5.8H5.8Z"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <p
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: 'calc(50% + 56px)',
-          transform: 'translateX(-50%)',
-          whiteSpace: 'nowrap',
-          fontSize: '14px',
-          fontWeight: 500,
-          color: 'light-dark(#71717a, #a1a1aa)',
-        }}
-      >
-        Your v0 generation will show here.
-      </p>
-    </main>
-  )
+"use client"
+
+import { useState } from "react"
+import { ArrowRight, Cable, CheckCircle2, ChevronDown, CircleDot, Cloud, Eye, Laptop, MapPin, Menu, Network, Printer, Router, Server, ShieldCheck, Signal, SlidersHorizontal, Smartphone, Sparkles, Wifi, X } from "lucide-react"
+
+const infrastructure = [
+  { icon: Server, type: "SERVIDORES Y CONECTIVIDAD", title: "Enterprise Rack Server", detail: "Servidor central · Dilan", accent: "cyan" },
+  { icon: Signal, type: "SERVIDORES Y CONECTIVIDAD", title: "Módem ADSL Alta Velocidad", detail: "Backbone de acceso", accent: "cyan" },
+  { icon: Router, type: "DISPOSITIVOS INTERMEDIOS", title: "Cisco Switching Core", detail: "Router principal · Kevin", accent: "violet" },
+  { icon: Wifi, type: "DISPOSITIVOS INTERMEDIOS", title: "Access Points Wi-Fi 6", detail: "Cobertura empresarial", accent: "violet" },
+  { icon: Laptop, type: "DISPOSITIVOS FINALES", title: "Workstations & PCs", detail: "2 alto rendimiento · 4 oficina", accent: "blue" },
+  { icon: Smartphone, type: "DISPOSITIVOS FINALES", title: "Laptops Ejecutivas", detail: "2 unidades · Emmanuel", accent: "blue" },
+  { icon: Printer, type: "PERIFÉRICOS & IOT", title: "Impresión y Vigilancia IP", detail: "Red de periféricos segura", accent: "purple" },
+  { icon: Cloud, type: "PERIFÉRICOS & IOT", title: "Conexiones Móviles", detail: "Acceso remoto controlado", accent: "purple" },
+]
+const team = [["LL", "Luis Lopez Alcudia", "Lead Network Architect", "Topology Design", "cyan"], ["K", "Kevin", "Infrastructure Specialist", "Hardware & Switching", "violet"], ["D", "Dilan", "Server Administrator", "Security & Systems", "blue"], ["E", "Emmanuel", "Deployment Lead", "End-Devices & Systems", "purple"]]
+function Eyebrow({ icon: Icon, children }: { icon: typeof Network; children: React.ReactNode }) { return <div className="eyebrow"><Icon size={14} /><span>{children}</span></div> }
+
+export default function Home() {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [status, setStatus] = useState(false)
+  return <main>
+    <header className="site-header"><a href="#inicio" className="brand"><span className="brand-mark"><Network size={19} /></span><span>NEXUS <b>LAN</b><small>SOLUTIONS</small></span></a><nav className={mobileOpen ? "nav-links open" : "nav-links"} aria-label="Navegación principal"><a href="#infraestructura" onClick={() => setMobileOpen(false)}>Infraestructura</a><a href="#topologia" onClick={() => setMobileOpen(false)}>Topología LAN</a><a href="#ubicacion" onClick={() => setMobileOpen(false)}>Ubicación</a><a href="#equipo" onClick={() => setMobileOpen(false)}>Equipo</a><button className="mobile-close" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú"><X size={20} /></button></nav><button className="status-button" onClick={() => setStatus(!status)}><span className="live-dot" />{status ? "Red operativa" : "Ver estado de red"}<ArrowRight size={15} /></button><button className="menu-button" onClick={() => setMobileOpen(true)} aria-label="Abrir menú"><Menu size={22} /></button></header>
+    <section id="inicio" className="hero shell"><div className="hero-copy"><Eyebrow icon={Sparkles}>INFRAESTRUCTURA DE NUEVA GENERACIÓN</Eyebrow><h1>Redes que <em>conectan</em><br />el futuro.</h1><p>Diseñamos y desplegamos infraestructura LAN de nivel empresarial: alto rendimiento, topologías inteligentes y seguridad sin compromisos.</p><div className="hero-actions"><a className="button-primary" href="#topologia">Explorar topología <ArrowRight size={16} /></a><a className="button-ghost" href="#infraestructura">Especificaciones técnicas <ChevronDown size={16} /></a></div><div className="hero-trust"><CheckCircle2 size={15} /><span>Arquitectura diseñada para continuidad</span><i /><span>Villahermosa, MX</span></div></div><div className="network-dashboard"><div className="dashboard-top"><span><span className="live-dot" /> LIVE / NETWORK MONITOR</span><span>NX-01 <CircleDot size={13} /></span></div><div className="dashboard-map"><div className="map-grid" /><span className="node n1" /><span className="node n2" /><span className="node n3" /><span className="node n4" /><div className="line l1" /><div className="line l2" /><div className="line l3" /><div className="line l4" /><div className="core-node"><Network size={24} /><b>CORE</b></div><div className="map-label ml1">SERVER RACK / 01</div><div className="map-label ml2">CISCO CORE / 02</div><span className="ping-ring" /></div><div className="metrics"><div><span>LATENCIA</span><strong>1<small>ms</small></strong><i className="metric-line cyan-line" /></div><div><span>UPTIME</span><strong>99.99<small>%</small></strong><i className="metric-line violet-line" /></div><div><span>ANCHO DE BANDA</span><strong>1<small>Gbps</small></strong><i className="metric-line blue-line" /></div></div></div></section>
+    <section id="infraestructura" className="section shell"><div className="section-heading"><div><Eyebrow icon={SlidersHorizontal}>SISTEMA COMPLETO</Eyebrow><h2>Infraestructura <span>sin límites.</span></h2></div><p>Un ecosistema conectado, diseñado para escalar. Cada componente cumple un rol preciso dentro de nuestra arquitectura de red.</p></div><div className="infra-grid">{infrastructure.map(({ icon: Icon, type, title, detail, accent }) => <article className={`infra-card ${accent}`} key={title}><div className="card-icon"><Icon size={21} /></div><span className="card-type">{type}</span><h3>{title}</h3><p>{detail}</p><ArrowRight className="card-arrow" size={17} /></article>)}</div></section>
+    <section id="topologia" className="section shell topology-section"><div className="section-heading"><div><Eyebrow icon={Cable}>INGENIERÍA DE RED</Eyebrow><h2>La precisión está<br /><span>en los detalles.</span></h2></div><a href="#equipo" className="text-link">Conoce al equipo <ArrowRight size={15} /></a></div><div className="topology-layout"><div className="topology-visual"><div className="topology-header"><span>LAN TOPOLOGY / DIAGRAM</span><span className="pill">ONLINE</span></div><div className="topology-canvas"><div className="rack rack-server"><Server size={19} /><span>SERVER</span></div><div className="rack rack-switch"><Router size={19} /><span>CORE SWITCH</span></div><div className="topo-lines"><i /><i /><i /><i /><i /></div><div className="endpoints"><span><Laptop size={16} /></span><span><Printer size={16} /></span><span><Wifi size={16} /></span><span><Eye size={16} /></span></div><div className="topology-caption"><span>CAT 6 / UTP</span><span>FULL DUPLEX</span><span>1 Gbps</span></div></div></div><div className="spec-panel"><div className="spec-header"><Cable size={20} /><div><span>ESTÁNDAR DE CABLEADO</span><strong>UTP CAT 6</strong></div></div><p>Canalización estructurada para máximo rendimiento y mínima interferencia electromagnética.</p><ul><li><CheckCircle2 size={16} />Rack ergonómicamente organizado</li><li><CheckCircle2 size={16} />Rutas de cableado identificadas</li><li><CheckCircle2 size={16} />Cumplimiento de seguridad física</li><li><CheckCircle2 size={16} />Mantenimiento y escalabilidad</li></ul><div className="spec-footer"><span>PROTOCOL <b>TCP/IP</b></span><span>TOPOLOGY <b>STAR</b></span></div></div></div></section>
+    <section id="ubicacion" className="location-section"><div className="shell location-layout"><div><Eyebrow icon={MapPin}>NUESTRA UBICACIÓN</Eyebrow><h2>En el centro de<br /><span>todo lo que importa.</span></h2><p>Operamos desde Villahermosa, Tabasco, conectando empresas con la infraestructura que necesitan para ir más lejos.</p><div className="address"><MapPin size={17} /><div><b>Oficinas Centrales & Datacenter</b><span>Villahermosa, Tabasco · México</span></div></div><a className="button-ghost" href="#equipo">Conocer más <ArrowRight size={15} /></a></div><div className="location-map"><div className="map-contours" /><div className="map-road road-one" /><div className="map-road road-two" /><div className="map-road road-three" /><div className="map-pin"><MapPin size={24} /></div><span className="map-city">VILLAHERMOSA</span><span className="map-state">TABASCO, MX</span><div className="map-coords">17°59′N · 92°56′W</div></div></div></section>
+    <section id="equipo" className="section shell team-section"><div className="section-heading"><div><Eyebrow icon={ShieldCheck}>EQUIPO 11 / NEXUS</Eyebrow><h2>Las personas detrás<br /><span>de la conexión.</span></h2></div><p>Especialistas que convierten la complejidad técnica en infraestructura confiable, segura y lista para el futuro.</p></div><div className="team-grid">{team.map(([initials, name, role, specialty, accent]) => <article className={`team-card ${accent}`} key={name}><div className="avatar">{initials}</div><div><h3>{name}</h3><p>{role}</p><span>{specialty}</span></div><ArrowRight size={16} /></article>)}</div></section>
+    <footer className="footer"><div className="shell footer-top"><a href="#inicio" className="brand"><span className="brand-mark"><Network size={19} /></span><span>NEXUS <b>LAN</b><small>SOLUTIONS</small></span></a><p>Infraestructura que mueve<br />el mundo.</p><div className="footer-meta"><span>CBTis 163</span><span>Clasifica y Diseña la Red LAN</span><span>Prof. Franklin Quevedo · Grupo 5º B</span></div></div><div className="shell footer-bottom"><span>© 2024 Nexus LAN Solutions. All rights reserved.</span><span>NETWORK STATUS <i className="live-dot" /> OPERATIONAL</span></div></footer>
+  </main>
 }
