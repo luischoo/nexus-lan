@@ -53,8 +53,10 @@ export function UniverseCanvas() {
 
 type TouchController = { active: boolean; lastX: number; deltaX: number }
 
-const LogoParticles = memo(function LogoParticles({ dispersed, touchController }: { dispersed: boolean; touchController: MutableRefObject<TouchController> }) {
+const LogoParticles = memo(function LogoParticles({ dispersed, touchController }: { dispersed: boolean; touchController?: MutableRefObject<TouchController> }) {
   const [isDragging, setIsDragging] = useState(false)
+  const internalTouchController = useRef<TouchController>({ active: false, lastX: 0, deltaX: 0 })
+  const controller = touchController ?? internalTouchController
   const pointsRef = useRef<THREE.Points>(null)
   const groupRef = useRef<THREE.Group>(null)
   const dragging = useRef(false)
@@ -98,11 +100,11 @@ const LogoParticles = memo(function LogoParticles({ dispersed, touchController }
       position.array[j + 2] = THREE.MathUtils.lerp(cloud.ambient[j + 2], cloud.positions[j + 2], progress.current)
     }
     position.needsUpdate = true
-    if (touchController.deltaX !== 0) {
-      targetRotation.current.y += touchController.deltaX * (window.innerWidth < 768 ? 0.018 : 0.01)
-      touchController.deltaX = 0
+    if (controller.current.deltaX !== 0) {
+      targetRotation.current.y += controller.current.deltaX * (window.innerWidth < 768 ? 0.018 : 0.01)
+      controller.current.deltaX = 0
     }
-    targetRotation.current.y = dragging.current || touchController.active ? targetRotation.current.y : pointer.x * 0.22
+    targetRotation.current.y = dragging.current || controller.current.active ? targetRotation.current.y : pointer.x * 0.22
     targetRotation.current.x = pointer.y * 0.12
     groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetRotation.current.y, 0.08)
     groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotation.current.x, 0.08)
