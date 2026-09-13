@@ -62,10 +62,6 @@ export function UniverseCanvas() {
 
 type TouchController = { active: boolean; lastX: number; deltaX: number }
 
-function StableParticleGroup({ children }: { children: React.ReactNode }) {
-  return <group scale={[1, 1, 1]}>{children}</group>
-}
-
 const LogoParticles = memo(function LogoParticles({ dispersed, active, touchController }: { dispersed: boolean; active: boolean; touchController?: MutableRefObject<TouchController> }) {
   const [isDragging, setIsDragging] = useState(false)
   const [particleLimit, setParticleLimit] = useState<number | null>(null)
@@ -119,7 +115,7 @@ const LogoParticles = memo(function LogoParticles({ dispersed, active, touchCont
     groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotation.current.x, 0.08)
   })
 
-  return <group ref={groupRef} onPointerDown={(event) => { setIsDragging(true); dragging.current = true; lastX.current = event.clientX }} onPointerUp={() => { setIsDragging(false); dragging.current = false }} onPointerLeave={() => { setIsDragging(false); dragging.current = false }} onPointerMove={(event) => { if (isDragging && dragging.current) { targetRotation.current.y += (event.clientX - lastX.current) * 0.01; lastX.current = event.clientX } }}><points ref={pointsRef}><bufferGeometry><bufferAttribute attach="attributes-position" args={[cloud.ambient.slice(), 3]} /></bufferGeometry><pointsMaterial color="#a7efff" size={0.045} transparent opacity={0.9} sizeAttenuation /></points><mesh><sphereGeometry args={[3.7, 16, 16]} /><meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.035} /></mesh></group>
+  return <group ref={groupRef} scale={[1, 1, 1]} onPointerDown={(event) => { setIsDragging(true); dragging.current = true; lastX.current = event.clientX }} onPointerUp={() => { setIsDragging(false); dragging.current = false }} onPointerLeave={() => { setIsDragging(false); dragging.current = false }} onPointerMove={(event) => { if (isDragging && dragging.current) { targetRotation.current.y += (event.clientX - lastX.current) * 0.01; lastX.current = event.clientX } }}><points ref={pointsRef}><bufferGeometry><bufferAttribute attach="attributes-position" args={[cloud.ambient.slice(), 3]} /></bufferGeometry><pointsMaterial color="#a7efff" size={0.045} transparent opacity={0.9} sizeAttenuation /></points><mesh><sphereGeometry args={[3.7, 16, 16]} /><meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.035} /></mesh></group>
 })
 
 export function NexusParticleLogo() {
@@ -139,5 +135,5 @@ export function NexusParticleLogo() {
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => { touchController.current.active = true; touchController.current.lastX = event.touches[0]?.clientX ?? 0 }
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => { if (!touchController.current.active) return; const x = event.touches[0]?.clientX ?? touchController.current.lastX; touchController.current.deltaX += x - touchController.current.lastX; touchController.current.lastX = x }
   const handleTouchEnd = () => { touchController.current.active = false; touchController.current.deltaX = 0 }
-  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 5], fov: 50 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><StableParticleGroup><LogoParticles dispersed={dispersed} active={active} touchController={touchController} /></StableParticleGroup></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
+  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 7.5], fov: 45 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><LogoParticles dispersed={dispersed} active={active} touchController={touchController} /></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
 }
