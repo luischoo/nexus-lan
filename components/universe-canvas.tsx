@@ -62,19 +62,8 @@ export function UniverseCanvas() {
 
 type TouchController = { active: boolean; lastX: number; deltaX: number }
 
-function ResponsiveCameraAndScale({ children }: { children: React.ReactNode }) {
-  const { camera, size } = useThree()
-  const isMobile = size.width < 768
-
-  useEffect(() => {
-    if (camera instanceof THREE.PerspectiveCamera) {
-      camera.position.z = isMobile ? 12 : 5.5
-      camera.fov = isMobile ? 75 : 50
-      camera.updateProjectionMatrix()
-    }
-  }, [size.width, camera, isMobile])
-
-  return <group scale={isMobile ? [0.55, 0.55, 0.55] : [1, 1, 1]}>{children}</group>
+function StableParticleGroup({ children }: { children: React.ReactNode }) {
+  return <group scale={[1, 1, 1]}>{children}</group>
 }
 
 const LogoParticles = memo(function LogoParticles({ dispersed, active, touchController }: { dispersed: boolean; active: boolean; touchController?: MutableRefObject<TouchController> }) {
@@ -150,5 +139,5 @@ export function NexusParticleLogo() {
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => { touchController.current.active = true; touchController.current.lastX = event.touches[0]?.clientX ?? 0 }
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => { if (!touchController.current.active) return; const x = event.touches[0]?.clientX ?? touchController.current.lastX; touchController.current.deltaX += x - touchController.current.lastX; touchController.current.lastX = x }
   const handleTouchEnd = () => { touchController.current.active = false; touchController.current.deltaX = 0 }
-  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><ResponsiveCameraAndScale><LogoParticles dispersed={dispersed} active={active} touchController={touchController} /></ResponsiveCameraAndScale></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
+  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 5], fov: 50 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><StableParticleGroup><LogoParticles dispersed={dispersed} active={active} touchController={touchController} /></StableParticleGroup></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
 }
