@@ -62,7 +62,22 @@ export function UniverseCanvas() {
 
 type TouchController = { active: boolean; lastX: number; deltaX: number }
 
-const LogoParticles = memo(function LogoParticles({ dispersed, active, scale, touchController }: { dispersed: boolean; active: boolean; scale: number; touchController?: MutableRefObject<TouchController> }) {
+function ResponsiveCameraAndScale({ children }: { children: React.ReactNode }) {
+  const { camera, size } = useThree()
+  const isMobile = size.width < 768
+
+  useEffect(() => {
+    if (camera instanceof THREE.PerspectiveCamera) {
+      camera.position.z = isMobile ? 12 : 5.5
+      camera.fov = isMobile ? 75 : 50
+      camera.updateProjectionMatrix()
+    }
+  }, [size.width, camera, isMobile])
+
+  return <group scale={isMobile ? [0.55, 0.55, 0.55] : [1, 1, 1]}>{children}</group>
+}
+
+const LogoParticles = memo(function LogoParticles({ dispersed, active, touchController }: { dispersed: boolean; active: boolean; touchController?: MutableRefObject<TouchController> }) {
   const [isDragging, setIsDragging] = useState(false)
   const [particleLimit, setParticleLimit] = useState<number | null>(null)
   const internalTouchController = useRef<TouchController>({ active: false, lastX: 0, deltaX: 0 })
@@ -73,24 +88,12 @@ const LogoParticles = memo(function LogoParticles({ dispersed, active, scale, to
   const lastX = useRef(0)
   const progress = useRef(0)
   const targetRotation = useRef({ x: 0, y: 0 })
-  const { camera } = useThree()
   useEffect(() => {
     const updateDevice = () => setParticleLimit(window.innerWidth < 768 ? 1200 : null)
     updateDevice()
     window.addEventListener("resize", updateDevice)
     return () => window.removeEventListener("resize", updateDevice)
   }, [])
-  useEffect(() => {
-    const updateCamera = () => {
-      const mobile = window.innerWidth < 768
-      camera.position.z = mobile ? 9.5 : 5
-      camera.fov = mobile ? 48 : 42
-      camera.updateProjectionMatrix()
-    }
-    updateCamera()
-    window.addEventListener("resize", updateCamera)
-    return () => window.removeEventListener("resize", updateCamera)
-  }, [camera])
   const cloud = useMemo(() => {
     const canvas = document.createElement("canvas")
     canvas.width = 720; canvas.height = 220
@@ -127,7 +130,7 @@ const LogoParticles = memo(function LogoParticles({ dispersed, active, scale, to
     groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRotation.current.x, 0.08)
   })
 
-  return <group ref={groupRef} scale={scale} onPointerDown={(event) => { setIsDragging(true); dragging.current = true; lastX.current = event.clientX }} onPointerUp={() => { setIsDragging(false); dragging.current = false }} onPointerLeave={() => { setIsDragging(false); dragging.current = false }} onPointerMove={(event) => { if (isDragging && dragging.current) { targetRotation.current.y += (event.clientX - lastX.current) * 0.01; lastX.current = event.clientX } }}><points ref={pointsRef}><bufferGeometry><bufferAttribute attach="attributes-position" args={[cloud.ambient.slice(), 3]} /></bufferGeometry><pointsMaterial color="#a7efff" size={0.045} transparent opacity={0.9} sizeAttenuation /></points><mesh><sphereGeometry args={[3.7, 16, 16]} /><meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.035} /></mesh></group>
+  return <group ref={groupRef} onPointerDown={(event) => { setIsDragging(true); dragging.current = true; lastX.current = event.clientX }} onPointerUp={() => { setIsDragging(false); dragging.current = false }} onPointerLeave={() => { setIsDragging(false); dragging.current = false }} onPointerMove={(event) => { if (isDragging && dragging.current) { targetRotation.current.y += (event.clientX - lastX.current) * 0.01; lastX.current = event.clientX } }}><points ref={pointsRef}><bufferGeometry><bufferAttribute attach="attributes-position" args={[cloud.ambient.slice(), 3]} /></bufferGeometry><pointsMaterial color="#a7efff" size={0.045} transparent opacity={0.9} sizeAttenuation /></points><mesh><sphereGeometry args={[3.7, 16, 16]} /><meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.035} /></mesh></group>
 })
 
 export function NexusParticleLogo() {
@@ -136,8 +139,7 @@ export function NexusParticleLogo() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const [dispersed, setDispersed] = useState(false)
   const [active, setActive] = useState(true)
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, 1.5)); const updateMobile = () => setIsMobile(window.innerWidth < 768); updateMobile(); window.addEventListener("resize", updateMobile); return () => window.removeEventListener("resize", updateMobile) }, [])
+  useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, 1.5)) }, [])
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => { setDispersed(!entry.isIntersecting); setActive(entry.isIntersecting) }, { threshold: 0.18 })
     if (sectionRef.current) observer.observe(sectionRef.current)
@@ -148,5 +150,5 @@ export function NexusParticleLogo() {
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => { touchController.current.active = true; touchController.current.lastX = event.touches[0]?.clientX ?? 0 }
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => { if (!touchController.current.active) return; const x = event.touches[0]?.clientX ?? touchController.current.lastX; touchController.current.deltaX += x - touchController.current.lastX; touchController.current.lastX = x }
   const handleTouchEnd = () => { touchController.current.active = false; touchController.current.deltaX = 0 }
-  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 10], fov: 42 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><LogoParticles dispersed={dispersed} active={active} scale={isMobile ? 0.65 : 1} touchController={touchController} /></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
+  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 5.5], fov: 50 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><ResponsiveCameraAndScale><LogoParticles dispersed={dispersed} active={active} touchController={touchController} /></ResponsiveCameraAndScale></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
 }
