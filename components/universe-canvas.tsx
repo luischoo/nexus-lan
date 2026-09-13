@@ -7,7 +7,7 @@ import * as THREE from "three"
 
 const STAR_COUNT = 850
 
-const AmbientStars = memo(function AmbientStars() {
+const AmbientStars = memo(function AmbientStars({ active }: { active: boolean }) {
   const pointsRef = useRef<THREE.Points>(null)
   const { camera } = useThree()
   const scrollRef = useRef(0)
@@ -34,7 +34,7 @@ const AmbientStars = memo(function AmbientStars() {
   }, [])
 
   useFrame(({ clock, pointer }) => {
-    if (!pointsRef.current) return
+    if (!active || document.hidden || !pointsRef.current) return
     const elapsed = clock.getElapsedTime()
     pointsRef.current.rotation.y = elapsed * 0.012 + pointer.x * 0.025
     pointsRef.current.rotation.x = Math.sin(elapsed * 0.08) * 0.025 + pointer.y * 0.018
@@ -47,14 +47,24 @@ const AmbientStars = memo(function AmbientStars() {
 
 export function UniverseCanvas() {
   const [dpr, setDpr] = useState(1)
-  useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, 2)) }, [])
-  return <div className="universe-canvas" aria-hidden="true"><Canvas camera={{ position: [0, 0, 8], fov: 60 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><ambientLight intensity={0.3} /><AmbientStars /></Canvas></div>
+  const [active, setActive] = useState(true)
+  const canvasRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, 1.5)) }, [])
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting), { threshold: 0 })
+    if (canvasRef.current) observer.observe(canvasRef.current)
+    const onVisibility = () => setActive(!document.hidden)
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => { observer.disconnect(); document.removeEventListener("visibilitychange", onVisibility) }
+  }, [])
+  return <div ref={canvasRef} className="universe-canvas" aria-hidden="true"><Canvas camera={{ position: [0, 0, 8], fov: 60 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><ambientLight intensity={0.3} /><AmbientStars active={active} /></Canvas></div>
 }
 
 type TouchController = { active: boolean; lastX: number; deltaX: number }
 
-const LogoParticles = memo(function LogoParticles({ dispersed, touchController }: { dispersed: boolean; touchController?: MutableRefObject<TouchController> }) {
+const LogoParticles = memo(function LogoParticles({ dispersed, active, touchController }: { dispersed: boolean; active: boolean; touchController?: MutableRefObject<TouchController> }) {
   const [isDragging, setIsDragging] = useState(false)
+  const [particleLimit, setParticleLimit] = useState<number | null>(null)
   const internalTouchController = useRef<TouchController>({ active: false, lastX: 0, deltaX: 0 })
   const controller = touchController ?? internalTouchController
   const pointsRef = useRef<THREE.Points>(null)
@@ -64,6 +74,12 @@ const LogoParticles = memo(function LogoParticles({ dispersed, touchController }
   const progress = useRef(0)
   const targetRotation = useRef({ x: 0, y: 0 })
   const { camera } = useThree()
+  useEffect(() => {
+    const updateDevice = () => setParticleLimit(window.innerWidth < 768 ? 1200 : null)
+    updateDevice()
+    window.addEventListener("resize", updateDevice)
+    return () => window.removeEventListener("resize", updateDevice)
+  }, [])
   useEffect(() => {
     const updateCamera = () => {
       const mobile = window.innerWidth < 768
@@ -86,11 +102,12 @@ const LogoParticles = memo(function LogoParticles({ dispersed, touchController }
     for (let y = 0; y < 220; y += 4) for (let x = 0; x < 720; x += 4) {
       if (pixels[(y * 720 + x) * 4 + 3] > 100) { positions.push((x - 360) / 62, (110 - y) / 62, (Math.random() - 0.5) * 0.2); ambient.push((Math.random() - 0.5) * 9, (Math.random() - 0.5) * 5.5, (Math.random() - 0.5) * 5) }
     }
-    return { positions: new Float32Array(positions), ambient: new Float32Array(ambient) }
-  }, [])
+    const limit = particleLimit ? Math.min(particleLimit * 3, positions.length) : positions.length
+    return { positions: new Float32Array(positions.slice(0, limit)), ambient: new Float32Array(ambient.slice(0, limit)) }
+  }, [particleLimit])
 
   useFrame(({ clock, pointer }) => {
-    if (!pointsRef.current || !groupRef.current) return
+    if (!active || document.hidden || !pointsRef.current || !groupRef.current) return
     progress.current = THREE.MathUtils.lerp(progress.current, dispersed ? 0 : 1, 0.045)
     const position = pointsRef.current.geometry.attributes.position as THREE.BufferAttribute
     for (let i = 0; i < position.count; i++) {
@@ -118,14 +135,17 @@ export function NexusParticleLogo() {
   const touchController = useRef<TouchController>({ active: false, lastX: 0, deltaX: 0 })
   const sectionRef = useRef<HTMLDivElement>(null)
   const [dispersed, setDispersed] = useState(false)
-  useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, 2)) }, [])
+  const [active, setActive] = useState(true)
+  useEffect(() => { setDpr(Math.min(window.devicePixelRatio || 1, 1.5)) }, [])
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setDispersed(!entry.isIntersecting), { threshold: 0.18 })
+    const observer = new IntersectionObserver(([entry]) => { setDispersed(!entry.isIntersecting); setActive(entry.isIntersecting) }, { threshold: 0.18 })
     if (sectionRef.current) observer.observe(sectionRef.current)
-    return () => observer.disconnect()
+    const onVisibility = () => setActive(!document.hidden && Boolean(sectionRef.current?.getBoundingClientRect().bottom))
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => { observer.disconnect(); document.removeEventListener("visibilitychange", onVisibility) }
   }, [])
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => { touchController.current.active = true; touchController.current.lastX = event.touches[0]?.clientX ?? 0 }
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => { if (!touchController.current.active) return; const x = event.touches[0]?.clientX ?? touchController.current.lastX; touchController.current.deltaX += x - touchController.current.lastX; touchController.current.lastX = x }
   const handleTouchEnd = () => { touchController.current.active = false; touchController.current.deltaX = 0 }
-  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 10], fov: 42 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><LogoParticles dispersed={dispersed} touchController={touchController} /></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
+  return <div ref={sectionRef} className="nexus-particle-stage" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}><div className="particle-stage-label"><span className="live-dot" /> INTERACTIVE PARTICLE TOPOLOGY <small>{dispersed ? "DISPERSED" : "FORMED"}</small></div><Canvas camera={{ position: [0, 0, 10], fov: 42 }} dpr={dpr} gl={{ antialias: true, powerPreference: "high-performance" }}><LogoParticles dispersed={dispersed} active={active} touchController={touchController} /></Canvas><p>HOVER / DRAG TO ROTATE · SCROLL TO DISPERSE</p></div>
 }
